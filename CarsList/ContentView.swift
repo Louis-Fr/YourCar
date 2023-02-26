@@ -8,14 +8,52 @@
 import SwiftUI
 
 struct ContentView: View {
+    
+    @Environment (\.managedObjectContext) var moc
+    @FetchRequest(sortDescriptors: [SortDescriptor(\.brand), SortDescriptor(\.model)]) var cars: FetchedResults<Car>
+    
+    @State private var ShowingAddScreen = false
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundColor(.accentColor)
-            Text("Hello, world!")
+        
+        NavigationStack {
+            
+            VStack {
+                List {
+                    ForEach(cars) { index in
+                        HStack {
+                            Text(index.brand ?? "error")
+                            Text(index.model ?? "error")
+                            Text(index.year.description)
+                        }
+                    }.onDelete(perform: deleteCar)
+                }
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        EditButton()
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        ShowingAddScreen.toggle()
+                    } label: {
+                        Label("Add Car", systemImage: "plus")
+                    }
+                    }
+                }
+                
+                .sheet(isPresented: $ShowingAddScreen) {
+                    AddCarView()
+                }
+            }
+            .navigationTitle("Car Collection")
         }
-        .padding()
+    }
+    
+    func deleteCar(at offsets: IndexSet) {
+        for offset in offsets {
+            let car = cars[offset]
+            moc.delete(car)
+        }
     }
 }
 
